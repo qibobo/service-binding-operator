@@ -14,6 +14,7 @@ import (
 // ReadCRDDescriptionData).
 func (r *Retriever) Get() (map[string][]byte, error) {
 	// interpolating custom environment
+	r.logger.Info("========before NewCustomEnvParser", "CustomEnvVar", r.plan.SBR.Spec.CustomEnvVar, "r.cache", r.cache)
 	envParser := NewCustomEnvParser(r.plan.SBR.Spec.CustomEnvVar, r.cache)
 	customVars, err := envParser.Parse()
 	if err != nil {
