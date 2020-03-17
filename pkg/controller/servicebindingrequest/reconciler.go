@@ -143,7 +143,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger.Info("options for build bindier", options)
 	bm, err := BuildServiceBinder(options)
 	if err != nil {
-		logger.Error(err, "Creating binding context")
+		logger.Error(err, "Creating binding contextsss")
 		if err == EmptyBackingServiceSelectorsErr || err == EmptyApplicationSelectorErr {
 			// TODO: find or create an error type containing suitable information to be propagated
 			var reason string
