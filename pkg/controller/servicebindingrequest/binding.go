@@ -304,7 +304,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	if !options.Valid() {
 		return nil, InvalidOptionsErr
 	}
-
+	options.Logger.Info("=========options is valid")
 	// objs groups all extra objects related to the informed SBR
 	objs := make([]*unstructured.Unstructured, 0)
 
@@ -314,7 +314,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	options.Logger.Info("=========build plan is successful")
 	rs := plan.GetCRs()
 	// append all SBR related CRs
 	objs = append(objs, rs...)
@@ -329,7 +329,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 			return nil, err
 		}
 	}
-
+	options.Logger.Info("=========after ReadBindableResourcesData")
 	// read bindable data from the CRDDescription found by the planner
 	for _, r := range plan.GetRelatedResources() {
 		err = retriever.ReadCRDDescriptionData(r.CR, r.CRDDescription)
@@ -337,17 +337,17 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 			return nil, err
 		}
 	}
-
+	options.Logger.Info("=========after ReadCRDDescriptionData")
 	// gather retriever's read data
 	// TODO: do not return error
 	retrievedData, err := retriever.Get()
 	if err != nil {
 		return nil, err
 	}
-
+	options.Logger.Info("=========after retriever.Get")
 	// gather related secret, again only appending it if there's a value.
 	secret := NewSecret(options.DynClient, plan)
-
+	options.Logger.Info("=========after NewSecret")
 	return &ServiceBinder{
 		Logger:    options.Logger,
 		Binder:    NewBinder(ctx, options.Client, options.DynClient, options.SBR, retriever.VolumeKeys),
