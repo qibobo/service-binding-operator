@@ -140,7 +140,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		SBR:                    sbr,
 		Logger:                 logger,
 	}
-
+	logger.Info("options for build bindier", options)
 	bm, err := BuildServiceBinder(options)
 	if err != nil {
 		logger.Error(err, "Creating binding context")
