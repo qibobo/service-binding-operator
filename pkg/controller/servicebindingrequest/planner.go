@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
+	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
@@ -100,9 +101,18 @@ func (p *Planner) Plan() (*Plan, error) {
 		}
 		p.logger.Debug("Resolved CRD", "CRD", crd)
 
+		//===
+		var crdDescription *olmv1alpha1.CRDDescription
+		if crd != nil {
+			crdDescription, err = buildCRDDescriptionFromCRD(crd)
+			if err != nil {
+				return nil, err
+			}
+		}
+		//===
 		// resolve the CRDDescription based on the service's GVK and the resolved CRD
-		olm := NewOLM(p.client, ns)
-		crdDescription, err := olm.SelectCRDByGVK(bssGVK, crd)
+		// olm := NewOLM(p.client, ns)
+		// crdDescription, err := olm.SelectCRDByGVK(bssGVK, crd)
 		if err != nil {
 			return nil, err
 		}
