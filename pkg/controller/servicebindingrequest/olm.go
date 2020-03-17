@@ -191,6 +191,10 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 	if err != nil || !ok {
 		return nil, err
 	}
+	fmt.Printf("=========crd %v\n", crd)
+	fmt.Printf("=========crdDescription.Kind %s\n", crdDescription.Kind)
+	fmt.Printf("=========crdDescription.Version %s\n", crdDescription.Version)
+	fmt.Printf("=========crd.GetAnnotations() %v\n", crd.GetAnnotations())
 
 	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
 	if err != nil {
@@ -215,6 +219,7 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) (
 	acc := make(map[string][]string)
 
 	for n, v := range annotations {
+		fmt.Printf("===========n: %s,   v:   %s\n", n, v)
 		// Iterate all annotations and compose related Spec and Status descriptors, where those
 		// descriptors should be grouped by field path.	So, for example, the "status.dbCredentials"
 		// field path should accumulate all related annotations, so the StatusDescriptor referring

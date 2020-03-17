@@ -20,7 +20,7 @@ func (r *Retriever) Get() (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	r.logger.Info("========after NewCustomEnvParser")
 	// convert values to a map[string][]byte
 	result := make(map[string][]byte)
 	for k, v := range customVars {
