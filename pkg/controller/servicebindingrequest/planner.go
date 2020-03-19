@@ -88,7 +88,7 @@ func (p *Planner) Plan() (*Plan, error) {
 	if len(selectors) == 0 {
 		return nil, EmptyBackingServiceSelectorsErr
 	}
-
+	p.logger.Info("--------------Plan", "ns", ns, "selectors", selectors)
 	relatedResources := make([]*RelatedResource, 0)
 	for _, s := range selectors {
 
@@ -100,7 +100,7 @@ func (p *Planner) Plan() (*Plan, error) {
 			return nil, err
 		}
 		p.logger.Debug("Resolved CRD", "CRD", crd)
-
+		p.logger.Info("--------------Plan", "crd", crd, "gvk", bssGVK)
 		//===
 		var crdDescription *olmv1alpha1.CRDDescription
 		if crd != nil {
@@ -109,6 +109,7 @@ func (p *Planner) Plan() (*Plan, error) {
 				return nil, err
 			}
 		}
+		p.logger.Info("--------------Plan", "crdDescription", crdDescription)
 		//===
 		// resolve the CRDDescription based on the service's GVK and the resolved CRD
 		// olm := NewOLM(p.client, ns)
@@ -125,7 +126,7 @@ func (p *Planner) Plan() (*Plan, error) {
 		if err != nil {
 			return nil, err
 		}
-
+		p.logger.Info("--------------Plan", "cr", cr)
 		r := &RelatedResource{
 			CRDDescription: crdDescription,
 			CR:             cr,

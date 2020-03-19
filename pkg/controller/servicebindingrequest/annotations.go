@@ -1,6 +1,7 @@
 package servicebindingrequest
 
 import (
+	"fmt"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -116,7 +117,7 @@ func SetSBRAnnotations(
 		annotations[sbrNamespaceAnnotation] = namespacedName.Namespace
 		annotations[sbrNameAnnotation] = namespacedName.Name
 		obj.SetAnnotations(annotations)
-
+		fmt.Printf("--------------SetSBRAnnotations, obj: %v\n", obj)
 		if err := updateUnstructuredObj(client, obj); err != nil {
 			return err
 		}

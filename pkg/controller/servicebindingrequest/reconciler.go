@@ -110,14 +110,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	)
 
 	logger.Info("Reconciling ServiceBindingRequest...")
-
+	logger.Info("1--------------Reconcile", "request.NamespacedName", request.NamespacedName)
 	// fetch and validate namespaced ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
 		logger.Error(err, "On retrieving service-binding-request instance.")
 		return DoneOnNotFound(err)
 	}
-
+	logger.Info("--------------Reconcile", "sbr", sbr)
 	// validate namespaced ServiceBindingRequest instance (this check has been disabled until test data has been
 	// adjusted to reflect the validation)
 	//
@@ -140,8 +140,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		SBR:                    sbr,
 		Logger:                 logger,
 	}
-	logger.Info("options for build bindier", options)
+	logger.Info("--------------Reconcile", "options for build bindier", options)
 	bm, err := BuildServiceBinder(options)
+	logger.Info("--------------Reconcile", "bm", bm)
 	if err != nil {
 		logger.Error(err, "Creating binding contextsss")
 		if err == EmptyBackingServiceSelectorsErr || err == EmptyApplicationSelectorErr {

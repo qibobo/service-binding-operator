@@ -67,7 +67,7 @@ func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstru
 	}
 
 	resourceClient := s.buildResourceClient()
-
+	logger.Info("--------------createOrUpdate", "u", u)
 	logger.Debug("Attempt to create secret...")
 	_, err = resourceClient.Create(u, metav1.CreateOptions{})
 	if err != nil && !errors.IsAlreadyExists(err) {

@@ -218,25 +218,30 @@ func (b *ServiceBinder) onError(
 
 // Bind configures binding between the Service Binding Request and its related objects.
 func (b *ServiceBinder) Bind() (reconcile.Result, error) {
+	b.Logger.Info("--------------Bind", "b", b)
 	sbrStatus := b.SBR.Status.DeepCopy()
-
+	b.Logger.Info("--------------Bind", "sbrStatus", sbrStatus, "b.Data", b.Data)
 	b.Logger.Info("Saving data on intermediary secret...")
 	secretObj, err := b.Secret.Commit(b.Data)
 	if err != nil {
 		b.Logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.SBR, sbrStatus, nil)
 	}
-	sbrStatus.Secret = secretObj.GetName()
 
+	sbrStatus.Secret = secretObj.GetName()
+	b.Logger.Info("--------------Bind", "secretObj", secretObj, "sbrStatus.Secret", sbrStatus.Secret)
 	updatedObjects, err := b.Binder.Bind()
 	if err != nil {
 		b.Logger.Error(err, "On binding application.")
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
+	b.Logger.Info("--------------Bind", "sbrStatus", sbrStatus, "updatedObjects", updatedObjects)
 	b.setApplicationObjects(sbrStatus, updatedObjects)
+	b.Logger.Info("--------------Bind", "sbrStatus", sbrStatus, "updatedObjects", updatedObjects)
 
 	// annotating objects related to binding
 	namespacedName := types.NamespacedName{Namespace: b.SBR.GetNamespace(), Name: b.SBR.GetName()}
+	b.Logger.Info("--------------Bind", "namespacedName", namespacedName, "b.Objects", b.Objects, "secretObj", secretObj)
 	if err = SetSBRAnnotations(b.DynClient, namespacedName, append(b.Objects, secretObj)); err != nil {
 		b.Logger.Error(err, "On setting annotations in related objects.")
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
@@ -250,6 +255,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 
 	// updating status of request instance
 	sbr, err := b.updateStatusServiceBindingRequest(b.SBR, sbrStatus)
+	b.Logger.Info("--------------Bind", "b.SBR", b.SBR, "sbrStatus", sbrStatus, "sbr", sbr)
 	if err != nil {
 		return RequeueOnConflict(err)
 	}
@@ -304,21 +310,23 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	if !options.Valid() {
 		return nil, InvalidOptionsErr
 	}
-	options.Logger.Info("=========options is valid")
+	options.Logger.Info("--------------BuildServiceBinder", "options", options)
 	// objs groups all extra objects related to the informed SBR
 	objs := make([]*unstructured.Unstructured, 0)
 
 	// plan is a source of information regarding the binding process
 	ctx := context.Background()
 	plan, err := buildPlan(ctx, options.DynClient, options.SBR)
+	options.Logger.Info("--------------BuildServiceBinder", "plan", plan)
 	if err != nil {
 		return nil, err
 	}
 	options.Logger.Info("=========build plan is successful")
 	rs := plan.GetCRs()
+	options.Logger.Info("--------------BuildServiceBinder", "rs", rs)
 	// append all SBR related CRs
 	objs = append(objs, rs...)
-
+	options.Logger.Info("--------------BuildServiceBinder", "objs", objs)
 	// retriever is responsible for gathering data related to the given plan.
 	retriever := NewRetriever(options.DynClient, plan, options.EnvVarPrefix)
 
@@ -331,6 +339,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	}
 	options.Logger.Info("=========after ReadBindableResourcesData")
 	// read bindable data from the CRDDescription found by the planner
+	options.Logger.Info("--------------BuildServiceBinder", "plan.GetRelatedResources()", plan.GetRelatedResources())
 	for _, r := range plan.GetRelatedResources() {
 		err = retriever.ReadCRDDescriptionData(r.CR, r.CRDDescription)
 		if err != nil {
@@ -344,9 +353,11 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	if err != nil {
 		return nil, err
 	}
+	options.Logger.Info("--------------BuildServiceBinder", "retrievedData", retrievedData)
 	options.Logger.Info("=========after retriever.Get")
 	// gather related secret, again only appending it if there's a value.
 	secret := NewSecret(options.DynClient, plan)
+	options.Logger.Info("--------------BuildServiceBinder", "secret", secret)
 	options.Logger.Info("=========after NewSecret")
 	return &ServiceBinder{
 		Logger:    options.Logger,
