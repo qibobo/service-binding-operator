@@ -79,7 +79,7 @@ func (r *Retriever) copyFrom(u *unstructured.Unstructured, path string, fieldPat
 // ReadCRDDescriptionData reads data related to given crdDescription
 func (r *Retriever) ReadCRDDescriptionData(u *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
 	r.logger.Info("Looking for spec-descriptors in 'spec'...")
-	r.logger.Info("--------------ReadCRDDescriptionData", "before r", r)
+	r.logger.Info("--------------ReadCRDDescriptionData1", "before r", r, "r.cache", r.cache, "r.data", r.data)
 	for _, specDescriptor := range crdDescription.SpecDescriptors {
 		if err := r.copyFrom(u, "spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
 			return err
@@ -92,6 +92,6 @@ func (r *Retriever) ReadCRDDescriptionData(u *unstructured.Unstructured, crdDesc
 			return err
 		}
 	}
-	r.logger.Info("--------------ReadCRDDescriptionData", "after r", r)
+	r.logger.Info("--------------ReadCRDDescriptionData2", "after r", r, "r.cache", r.cache, "r.data", r.data)
 	return nil
 }

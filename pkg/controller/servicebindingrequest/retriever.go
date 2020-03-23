@@ -83,7 +83,7 @@ func (r *Retriever) read(cr *unstructured.Unstructured, place, path string, xDes
 		"CRDDescription.XDescriptors", xDescriptors,
 	)
 	log.Debug("Reading CRDDescription attributes...")
-	log.Info("--------------read begin", "cr", cr, "place", place, "path", path, "xDescriptors", xDescriptors)
+	log.Info("--------------read begin1", "cr", cr, "place", place, "path", path, "xDescriptors", xDescriptors)
 	// holds the secret name and items
 	secrets := make(map[string][]string)
 
@@ -96,7 +96,7 @@ func (r *Retriever) read(cr *unstructured.Unstructured, place, path string, xDes
 	for _, xDescriptor := range xDescriptors {
 		log = log.WithValues("CRDDescription.xDescriptor", xDescriptor, "cache", r.cache)
 		log.Debug("Inspecting xDescriptor...")
-		log.Info("--------------read begin", "xDescriptor", xDescriptor)
+		log.Info("--------------read begin2", "xDescriptor", xDescriptor)
 		if _, ok := r.cache[place].(map[string]interface{}); !ok {
 			r.cache[place] = make(map[string]interface{})
 		}
@@ -119,10 +119,10 @@ func (r *Retriever) read(cr *unstructured.Unstructured, place, path string, xDes
 			log.Debug("Defaulting....")
 		}
 	}
-	log.Info("-----------readSecret", "secrets", secrets, "configMaps", configMaps)
+	log.Info("-----------readSecret1", "secrets", secrets, "configMaps", configMaps)
 	for name, items := range secrets {
 		// loading secret items all-at-once
-		log.Info("--------------readSecret", "cr", cr, "name", name, "items", items, "place", place, "path", path)
+		log.Info("--------------readSecret2", "cr", cr, "name", name, "items", items, "place", place, "path", path)
 		err := r.readSecret(cr, name, items, place, path)
 		if err != nil {
 			return err
