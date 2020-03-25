@@ -15,14 +15,14 @@ import (
 
 // Retriever reads all data referred in plan instance, and store in a secret.
 type Retriever struct {
-	logger        *log.Log                          // logger instance
-	data          map[string][]byte                 // data retrieved
-	Objects       []*unstructured.Unstructured      // list of objects employed
-	client        dynamic.Interface                 // Kubernetes API client
-	plan          *Plan                             // plan instance
-	VolumeKeys    []string                          // list of keys found
-	bindingPrefix string                            // prefix for variable names
-	cache         map[string]map[string]interface{} // store visited paths
+	logger        *log.Log                     // logger instance
+	data          map[string][]byte            // data retrieved
+	Objects       []*unstructured.Unstructured // list of objects employed
+	client        dynamic.Interface            // Kubernetes API client
+	plan          *Plan                        // plan instance
+	VolumeKeys    []string                     // list of keys found
+	bindingPrefix string                       // prefix for variable names
+	cache         map[string]interface{}       // store visited paths
 }
 
 const (
@@ -61,17 +61,14 @@ func (r *Retriever) getCRKey(u *unstructured.Unstructured, section string, key s
 	if !exists {
 		return "", sectionMap, fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
 	}
-	crName := objName
-	if _, ok := r.cache[crName]; !ok {
-		r.cache[crName] = make(map[string]interface{})
-	}
+
 	log.WithValues("SectionMap", sectionMap).Debug("Getting values from sectionmap")
 	v, _, err := r.getNestedValue(key, sectionMap)
 	for k, v := range sectionMap.(map[string]interface{}) {
-		if _, ok := r.cache[crName][section]; !ok {
-			r.cache[crName][section] = make(map[string]interface{})
+		if _, ok := r.cache[section]; !ok {
+			r.cache[section] = make(map[string]interface{})
 		}
-		r.cache[crName][section].(map[string]interface{})[k] = v
+		r.cache[section].(map[string]interface{})[k] = v
 	}
 	return v, sectionMap, err
 }
@@ -96,29 +93,25 @@ func (r *Retriever) read(cr *unstructured.Unstructured, place, path string, xDes
 	if err != nil {
 		return err
 	}
-	crName := cr.GetName()
-	if _, ok := r.cache[crName]; !ok {
-		r.cache[crName] = make(map[string]interface{})
-	}
 	for _, xDescriptor := range xDescriptors {
 		log = log.WithValues("CRDDescription.xDescriptor", xDescriptor, "cache", r.cache)
 		log.Debug("Inspecting xDescriptor...")
 		log.Info("--------------read begin2", "xDescriptor", xDescriptor)
-		if _, ok := r.cache[crName][place].(map[string]interface{}); !ok {
-			r.cache[crName][place] = make(map[string]interface{})
+		if _, ok := r.cache[place].(map[string]interface{}); !ok {
+			r.cache[place] = make(map[string]interface{})
 		}
 		if strings.HasPrefix(xDescriptor, secretPrefix) {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
-			if _, ok := r.cache[crName][place].(map[string]interface{})[r.extractSecretItemName(xDescriptor)]; !ok {
-				r.markVisitedPaths(r.extractSecretItemName(xDescriptor), pathValue, place, crName)
-				r.cache[crName][place].(map[string]interface{})[r.extractSecretItemName(xDescriptor)] = make(map[string]interface{})
+			if _, ok := r.cache[place].(map[string]interface{})[r.extractSecretItemName(xDescriptor)]; !ok {
+				r.markVisitedPaths(r.extractSecretItemName(xDescriptor), pathValue, place)
+				r.cache[place].(map[string]interface{})[r.extractSecretItemName(xDescriptor)] = make(map[string]interface{})
 			}
 		} else if strings.HasPrefix(xDescriptor, configMapPrefix) {
 			configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
-			r.markVisitedPaths(r.extractConfigMapItemName(xDescriptor), pathValue, place, crName)
+			r.markVisitedPaths(r.extractConfigMapItemName(xDescriptor), pathValue, place)
 		} else if strings.HasPrefix(xDescriptor, volumeMountSecretPrefix) {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
-			r.markVisitedPaths(r.extractSecretItemName(xDescriptor), pathValue, place, crName)
+			r.markVisitedPaths(r.extractSecretItemName(xDescriptor), pathValue, place)
 			r.VolumeKeys = append(r.VolumeKeys, pathValue)
 		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
 			r.store(cr, path, []byte(pathValue))
@@ -158,18 +151,18 @@ func (r *Retriever) extractConfigMapItemName(xDescriptor string) string {
 }
 
 // markVisitedPaths updates all visited paths in cache, This initializes the cache map
-func (r *Retriever) markVisitedPaths(name, keyPath, fromPath, crName string) {
-	if _, ok := r.cache[crName][fromPath]; !ok {
-		r.cache[crName][fromPath] = make(map[string]interface{})
+func (r *Retriever) markVisitedPaths(name, keyPath, fromPath string) {
+	if _, ok := r.cache[fromPath]; !ok {
+		r.cache[fromPath] = make(map[string]interface{})
 	}
-	if _, ok := r.cache[crName][fromPath].(map[string]interface{})[name]; !ok {
-		r.cache[crName][fromPath].(map[string]interface{})[name] = make(map[string]interface{})
+	if _, ok := r.cache[fromPath].(map[string]interface{})[name]; !ok {
+		r.cache[fromPath].(map[string]interface{})[name] = make(map[string]interface{})
 	}
-	if _, ok := r.cache[crName][fromPath].(map[string]interface{})[name].(map[string]interface{}); !ok {
-		r.cache[crName][fromPath].(map[string]interface{})[name] = make(map[string]interface{})
+	if _, ok := r.cache[fromPath].(map[string]interface{})[name].(map[string]interface{}); !ok {
+		r.cache[fromPath].(map[string]interface{})[name] = make(map[string]interface{})
 	}
-	if _, ok := r.cache[crName][fromPath].(map[string]interface{})[name].(map[string]interface{})[keyPath]; !ok {
-		r.cache[crName][fromPath].(map[string]interface{})[name].(map[string]interface{})[keyPath] = make(map[string]interface{})
+	if _, ok := r.cache[fromPath].(map[string]interface{})[name].(map[string]interface{})[keyPath]; !ok {
+		r.cache[fromPath].(map[string]interface{})[name].(map[string]interface{})[keyPath] = make(map[string]interface{})
 	}
 }
 
@@ -192,10 +185,7 @@ func (r *Retriever) readSecret(cr *unstructured.Unstructured, name string, items
 	if !exists {
 		return fmt.Errorf("could not find 'data' in secret")
 	}
-	crName := cr.GetName()
-	if _, ok := r.cache[crName]; !ok {
-		r.cache[crName] = make(map[string]interface{})
-	}
+
 	for k, v := range data {
 		value := v.(string)
 		data, err := base64.StdEncoding.DecodeString(value)
@@ -204,9 +194,9 @@ func (r *Retriever) readSecret(cr *unstructured.Unstructured, name string, items
 		}
 		log = log.WithValues("Secret.Key.Name", k, "Secret.Key.Length", len(data))
 		log.Debug("Inspecting secret key...")
-		r.markVisitedPaths(path, k, fromPath, crName)
+		r.markVisitedPaths(path, k, fromPath)
 		// update cache after reading configmap/secret in cache
-		r.cache[crName][fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = string(data)
+		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = string(data)
 		// making sure key name has a secret reference
 		r.store(cr, fmt.Sprintf("configMap_%s", k), data)
 		r.store(cr, fmt.Sprintf("secret_%s", k), data)
@@ -227,10 +217,7 @@ func (r *Retriever) readConfigMap(cr *unstructured.Unstructured, name string, it
 	if err != nil {
 		return err
 	}
-	crName := cr.GetName()
-	if _, ok := r.cache[crName]; !ok {
-		r.cache[crName] = make(map[string]interface{})
-	}
+
 	data, exists, err := unstructured.NestedMap(u.Object, []string{"data"}...)
 	if err != nil {
 		return err
@@ -246,9 +233,9 @@ func (r *Retriever) readConfigMap(cr *unstructured.Unstructured, name string, it
 			"configMap.Key.Name", k,
 			"configMap.Key.Length", len(value),
 		)
-		r.markVisitedPaths(path, k, fromPath, crName)
+		r.markVisitedPaths(path, k, fromPath)
 		// update cache after reading configmap/secret in cache
-		r.cache[crName][fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = value
+		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = value
 		// making sure key name has a configMap reference
 		r.store(cr, fmt.Sprintf("configMap_%s", k), []byte(value))
 	}
@@ -280,6 +267,6 @@ func NewRetriever(client dynamic.Interface, plan *Plan, bindingPrefix string) *R
 		plan:          plan,
 		VolumeKeys:    []string{},
 		bindingPrefix: bindingPrefix,
-		cache:         make(map[string]map[string]interface{}),
+		cache:         make(map[string]interface{}),
 	}
 }
