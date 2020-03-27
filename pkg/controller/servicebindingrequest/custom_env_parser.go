@@ -26,7 +26,7 @@ func NewCustomEnvParser(envMap []corev1.EnvVar, cache map[string]map[string]inte
 func (c *CustomEnvParser) Parse() (map[string]interface{}, error) {
 	data := make(map[string]interface{})
 	for _, v := range c.EnvMap {
-		tmpl, err := template.New("set").Funcs(template.FuncMap{"to_json": MarshalToJSON}).Parse(v.Value)
+		tmpl, err := template.New("set").Funcs(template.FuncMap{"to_json": MarshalToJSON, "to_json_array": MarshalToJSONArray}).Parse(v.Value)
 		// tmpl, err := template.New("set").Funcs(template.FuncMap{"marshal": MarchalToJson}).Parse("{\"languate-translater\": {{marshal .status.secretName}}}")
 		if err != nil {
 			return data, err
@@ -50,4 +50,13 @@ func MarshalToJSON(m interface{}) (string, error) {
 		return "", err
 	}
 	return string(bytes), nil
+}
+
+func MarshalToJSONArray(cache map[string]map[string]interface{}) (string, error) {
+	var array []map[string]interface{} = []map[string]interface{}{}
+	for k, v := range cache {
+		v["id"] = k
+		array = append(array, v)
+	}
+	return MarshalToJSON(array)
 }
