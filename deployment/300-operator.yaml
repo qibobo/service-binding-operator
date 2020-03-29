@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-binding-operator
+  namespace: ibm-service-binding
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: service-binding-operator
+  template:
+    metadata:
+      labels:
+        name: service-binding-operator
+    spec:
+      serviceAccountName: service-binding-operator
+      imagePullSecrets:
+        - name: ibm-cfn-system-us-icr-io
+      containers:
+        - name: service-binding-operator
+          # Replace this with the built image name
+          image: (( concat environment.registry-path "/service-binding-operator:" environment.versions.service-binding-operator ))
+          command:
+          - service-binding-operator
+          env:
+            - name: WATCH_NAMESPACE
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: service-binding-operator
