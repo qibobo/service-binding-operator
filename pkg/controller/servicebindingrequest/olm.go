@@ -177,7 +177,7 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 		ok  bool
 		err error
 	)
-
+	fmt.Printf("--------------buildCRDDescriptionFromCRD, crd: %v\n", crd)
 	crdDescription := &olmv1alpha1.CRDDescription{
 		Name: crd.GetName(),
 	}
@@ -191,6 +191,10 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 	if err != nil || !ok {
 		return nil, err
 	}
+	fmt.Printf("--------------buildCRDDescriptionFromCRD,   crd %v\n", crd)
+	fmt.Printf("--------------buildCRDDescriptionFromCRD,   crdDescription.Kind %s\n", crdDescription.Kind)
+	fmt.Printf("--------------buildCRDDescriptionFromCRD,   crdDescription.Version %s\n", crdDescription.Version)
+	fmt.Printf("--------------buildCRDDescriptionFromCRD,   crd.GetAnnotations() %v\n", crd.GetAnnotations())
 
 	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
 	if err != nil {
@@ -198,7 +202,7 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 	}
 	crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptors...)
 	crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptors...)
-
+	fmt.Printf("--------------buildCRDDescriptionFromCRD,   crdDescription %v\n", crdDescription)
 	return crdDescription, nil
 }
 
@@ -213,8 +217,9 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) (
 	var statusDescriptors []olmv1alpha1.StatusDescriptor
 
 	acc := make(map[string][]string)
-
+	fmt.Printf("-------------- buildDescriptorsFromAnnotations,  annotations: %v\n", annotations)
 	for n, v := range annotations {
+		fmt.Printf("===========n: %s,   v:   %s\n", n, v)
 		// Iterate all annotations and compose related Spec and Status descriptors, where those
 		// descriptors should be grouped by field path.	So, for example, the "status.dbCredentials"
 		// field path should accumulate all related annotations, so the StatusDescriptor referring
@@ -226,11 +231,12 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) (
 		}
 
 		// annotationName has the binding information encoded into it.
+		fmt.Printf("-------------- buildDescriptorsFromAnnotations, n: %s, v: %s\n", n, v)
 		bindingInfo, err := NewBindingInfo(n, v)
 		if err != nil {
 			return nil, nil, err
 		}
-
+		fmt.Printf("-------------- buildDescriptorsFromAnnotations, bindingInfo: %v\n", bindingInfo)
 		descriptors, exists := acc[bindingInfo.FieldPath]
 		if !exists {
 			descriptors = make([]string, 0)
@@ -255,7 +261,7 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) (
 			})
 		}
 	}
-
+	fmt.Printf("-------------- buildDescriptorsFromAnnotations, specDescriptors: %v,  statusDescriptors: %v\n", specDescriptors, statusDescriptors)
 	return specDescriptors, statusDescriptors, nil
 }
 

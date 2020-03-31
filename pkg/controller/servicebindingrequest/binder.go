@@ -55,7 +55,7 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 		Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
 		Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
 	}
-
+	b.logger.Info("--------------search", "ns", ns, "gvr", gvr)
 	var opts metav1.ListOptions
 
 	// If Application name is present
@@ -71,21 +71,25 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 			LabelSelector: labels.Set(matchLabels).String(),
 		}
 	} else {
+		b.logger.Info("========EmptyApplicationSelectorErr")
 		return nil, EmptyApplicationSelectorErr
 	}
-
+	b.logger.Info("--------------search", "ns", ns, "gvr", gvr, "opts", opts)
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
+		b.logger.Info("========get err", "err", err)
 		return nil, err
 	}
 
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {
+		b.logger.Info("========get not found", "err", err)
 		return nil, k8serror.NewNotFound(
 			gvr.GroupResource(),
 			b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
 		)
 	}
+	b.logger.Info("--------------search", "objList", objList)
 	return objList, err
 }
 
@@ -452,9 +456,10 @@ func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (boo
 // name than original ServiceBindingRequest.
 func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Unstructured, error) {
 	updatedObjs := []*unstructured.Unstructured{}
-
+	b.logger.Info("--------------update", "objs", objs)
 	for _, obj := range objs.Items {
 		// store a copy of the original object to later be used in a comparison
+		b.logger.Info("--------------update", "obj", obj)
 		originalObj := obj.DeepCopy()
 		name := obj.GetName()
 		log := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
@@ -470,7 +475,7 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 				return nil, err
 			}
 		}
-
+		b.logger.Info("--------------update", "originalObj", originalObj, "updatedObj", updatedObj)
 		if specsAreEqual, err := nestedMapComparison(originalObj, updatedObj, "spec"); err != nil {
 			log.Error(err, "")
 			continue
@@ -495,7 +500,7 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 
 		updatedObjs = append(updatedObjs, updatedObj)
 	}
-
+	b.logger.Info("--------------update", "updatedObjs", updatedObjs)
 	return updatedObjs, nil
 }
 
@@ -538,10 +543,13 @@ func (b *Binder) Unbind() error {
 // in ApplicationSelector, and then updating spec.
 func (b *Binder) Bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
+	b.logger.Info("--------------Bind", "objs", objs, "err", err)
 	if err != nil {
 		return nil, err
 	}
-	return b.update(objs)
+	res, err := b.update(objs)
+	b.logger.Info("--------------Bind", "res", res, "err", err)
+	return res, err
 }
 
 // NewBinder returns a new Binder instance.

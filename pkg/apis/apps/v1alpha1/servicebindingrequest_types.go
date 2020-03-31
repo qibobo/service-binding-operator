@@ -72,6 +72,7 @@ type BackingServiceSelector struct {
 	ResourceRef             string `json:"resourceRef"`
 	// +optional
 	Namespace *string `json:"namespace,omitempty"`
+	Id        string  `json:"id"`
 }
 
 // BoundApplication defines the application workloads to which the binding secret has

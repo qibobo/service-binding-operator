@@ -14,12 +14,14 @@ import (
 // ReadCRDDescriptionData).
 func (r *Retriever) Get() (map[string][]byte, error) {
 	// interpolating custom environment
+	r.logger.Info("--------------Retriever.Get", "CustomEnvVar", r.plan.SBR.Spec.CustomEnvVar, "r.cache", r.cache)
 	envParser := NewCustomEnvParser(r.plan.SBR.Spec.CustomEnvVar, r.cache)
 	customVars, err := envParser.Parse()
 	if err != nil {
 		return nil, err
 	}
-
+	r.logger.Info("--------------Retriever.Get", "customVars", customVars)
+	r.logger.Info("========after NewCustomEnvParser")
 	// convert values to a map[string][]byte
 	result := make(map[string][]byte)
 	for k, v := range customVars {
@@ -30,6 +32,7 @@ func (r *Retriever) Get() (map[string][]byte, error) {
 	for k, v := range r.data {
 		result[k] = v
 	}
+	r.logger.Info("--------------Retriever.Get", "result", result)
 	return result, nil
 }
 
@@ -39,20 +42,24 @@ func (r *Retriever) ReadBindableResourcesData(
 	crs []*unstructured.Unstructured,
 ) error {
 	r.logger.Info("Detecting extra resources for binding...")
+	r.logger.Info("--------------ReadBindableResourcesData", "sbr", sbr, "crs", crs)
 	for _, cr := range crs {
+		r.logger.Info("--------------ReadBindableResourcesData", "cr", cr)
 		b := NewDetectBindableResources(sbr, cr, []schema.GroupVersionResource{
 			{Group: "", Version: "v1", Resource: "configmaps"},
 			{Group: "", Version: "v1", Resource: "services"},
 			{Group: "route.openshift.io", Version: "v1", Resource: "routes"},
 		}, r.client)
-
+		r.logger.Info("--------------ReadBindableResourcesData", "cr", cr, "b", b)
 		vals, err := b.GetBindableVariables()
 		if err != nil {
 			return err
 		}
+		r.logger.Info("--------------ReadBindableResourcesData", "vals", vals)
 		for k, v := range vals {
 			r.storeInto(cr, k, []byte(fmt.Sprintf("%v", v)))
 		}
+		r.logger.Info("--------------ReadBindableResourcesData", "r", r)
 	}
 
 	return nil
@@ -72,6 +79,7 @@ func (r *Retriever) copyFrom(u *unstructured.Unstructured, path string, fieldPat
 // ReadCRDDescriptionData reads data related to given crdDescription
 func (r *Retriever) ReadCRDDescriptionData(u *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
 	r.logger.Info("Looking for spec-descriptors in 'spec'...")
+	r.logger.Info("--------------ReadCRDDescriptionData1", "before r", r, "r.cache", r.cache, "r.data", r.data)
 	for _, specDescriptor := range crdDescription.SpecDescriptors {
 		if err := r.copyFrom(u, "spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
 			return err
@@ -84,6 +92,6 @@ func (r *Retriever) ReadCRDDescriptionData(u *unstructured.Unstructured, crdDesc
 			return err
 		}
 	}
-
+	r.logger.Info("--------------ReadCRDDescriptionData2", "after r", r, "r.cache", r.cache, "r.data", r.data)
 	return nil
 }

@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"encoding/base64"
+	"fmt"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,6 +70,7 @@ func (b DetectBindableResources) GetBindableVariables() (map[string]interface{},
 	if err != nil {
 		return b.data, err
 	}
+	fmt.Printf("--------------GetBindableVariables,  ownedResources: %v\n", ownedResources)
 	for _, resource := range ownedResources {
 		switch resource.GetKind() {
 		// In case of ConfigMap we would read data field

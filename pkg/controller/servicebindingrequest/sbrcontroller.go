@@ -1,7 +1,7 @@
 package servicebindingrequest
 
 import (
-	"os"
+	// "os"
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
@@ -69,21 +69,22 @@ func (s *SBRController) createUnstructuredWithGVK(gvk schema.GroupVersionKind) *
 
 // getWatchingGVKs return a list of GVKs that this controller is interested in watching.
 func (s *SBRController) getWatchingGVKs() ([]schema.GroupVersionKind, error) {
-	log := s.logger
+	// log := s.logger
 	// standard resources types
 	gvks := []schema.GroupVersionKind{
 		{Group: "", Version: "v1", Kind: "Secret"},
 		{Group: "", Version: "v1", Kind: "ConfigMap"},
 	}
 
-	olm := NewOLM(s.Client, os.Getenv("WATCH_NAMESPACE"))
-	olmGVKs, err := olm.ListCSVOwnedCRDsAsGVKs()
-	if err != nil {
-		log.Error(err, "On listing owned CSV as GVKs")
-		return nil, err
-	}
-	log.Debug("Amount of GVK founds in CSV objects.", "CSVOwnedGVK.Amount", len(olmGVKs))
-	return append(gvks, olmGVKs...), nil
+	// olm := NewOLM(s.Client, os.Getenv("WATCH_NAMESPACE"))
+	// olmGVKs, err := olm.ListCSVOwnedCRDsAsGVKs()
+	// if err != nil {
+	// 	log.Error(err, "On listing owned CSV as GVKs")
+	// 	return nil, err
+	// }
+	// log.Debug("Amount of GVK founds in CSV objects.", "CSVOwnedGVK.Amount", len(olmGVKs))
+	// return append(gvks, olmGVKs...), nil
+	return gvks, nil
 }
 
 // isOfKind evaluates whether the given object has a specific kind.
