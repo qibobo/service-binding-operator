@@ -6,7 +6,10 @@ import (
 	"testing"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
+	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/stretchr/testify/require"
@@ -186,6 +189,34 @@ func TestServiceBinder_Bind(t *testing.T) {
 						}
 					}
 				}
+			}
+			providedBindingPath := args.options.SBR.Spec.ApplicationSelector.BindingPath
+			computedBindingPath := sb.SBR.Spec.ApplicationSelector.BindingPath
+
+			if providedBindingPath != nil {
+
+				// user has provided BindingPath information explicitly
+				require.True(t, providedBindingPath.PodSpecPath != nil ||
+					providedBindingPath.CustomSecretPath != nil)
+
+				// ensure the provided values have not been adulterated.
+				if providedBindingPath.PodSpecPath != nil {
+					require.Equal(t, providedBindingPath.PodSpecPath.Containers,
+						computedBindingPath.PodSpecPath.Containers)
+					require.Equal(t, providedBindingPath.PodSpecPath.Volumes,
+						computedBindingPath.PodSpecPath.Volumes)
+
+				} else if computedBindingPath.CustomSecretPath != nil {
+					// ensure the provided values have not been adulterated.
+					require.Equal(t, providedBindingPath.CustomSecretPath,
+						computedBindingPath.CustomSecretPath)
+				}
+			} else {
+				// user has NOT provided BindingPath information explicitly
+
+				require.Equal(t, pathToContainers, computedBindingPath.PodSpecPath.Containers)
+				require.Equal(t, pathToVolumes, computedBindingPath.PodSpecPath.Volumes)
+				require.Nil(t, computedBindingPath.CustomSecretPath)
 			}
 		}
 	}
