@@ -19,10 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
 	k8stesting "k8s.io/client-go/testing"
-
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/log"
-	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 // wantedFieldFunc evaluates a Unstructured object
