@@ -68,11 +68,17 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref common.ReferenceCal
 							Ref: ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus"),
 						},
 					},
+					"bindingPath": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BindingPath refers to the path in the application workload's schema where the binding workload would be referenced.",
+							Ref:         ref("./pkg/apis/apps/v1alpha1.BindingPath"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"./pkg/apis/apps/v1alpha1.BindingPath", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 

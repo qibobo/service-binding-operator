@@ -2,6 +2,8 @@ package servicebindingrequest
 
 import (
 	"context"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -39,6 +42,14 @@ func TestBinderNew(t *testing.T) {
 	}
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
+	customSecretPath := "metadata.clusterName"
+	sbr.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
+		PodSpecPath: &v1alpha1.PodSpecPath{
+			Containers: pathToContainers,
+			Volumes:    pathToVolumes,
+		},
+		CustomSecretPath: &customSecretPath,
+	}
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
 	binder := NewBinder(
@@ -102,7 +113,23 @@ func TestBinderNew(t *testing.T) {
 		require.Equal(t, "name", list[0].Name)
 		require.Equal(t, "value", list[0].Value)
 	})
+	t.Run("update custom secret path ", func(t *testing.T) {
+		list, err := binder.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
 
+		updatedDeployment, err := binder.updateSecretField(&list.Items[0])
+		require.NoError(t, err)
+		require.NotNil(t, updatedDeployment)
+
+		customSecretPathSlice := strings.Split(customSecretPath, ".")
+
+		customSecretInMeta, found, err := unstructured.NestedFieldCopy(list.Items[0].Object, customSecretPathSlice...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Equal(t, name, customSecretInMeta)
+
+	})
 	t.Run("update", func(t *testing.T) {
 		list, err := binder.search()
 		require.NoError(t, err)
@@ -112,7 +139,7 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 
-		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, binder.getContainersPath()...)
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
@@ -145,7 +172,7 @@ func TestBinderNew(t *testing.T) {
 		err = binder.remove(list)
 		require.NoError(t, err)
 
-		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, binder.getContainersPath()...)
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
@@ -159,6 +186,21 @@ func TestBinderNew(t *testing.T) {
 		require.Empty(t, c.EnvFrom)
 		// making sure no volume mounts are present
 		require.Nil(t, c.VolumeMounts)
+	})
+	t.Run("podspec-path-default", func(t *testing.T) {
+		containersPath := binder.getContainersPath()
+		expectedContainersPath := []string{"spec", "template", "spec", "containers"}
+		require.True(t, reflect.DeepEqual(containersPath, expectedContainersPath))
+
+		volumesPath := binder.getVolumesPath()
+		expectedVolumesPath := []string{"spec", "template", "spec", "volumes"}
+		require.True(t, reflect.DeepEqual(volumesPath, expectedVolumesPath))
+	})
+
+	t.Run("custom-path", func(t *testing.T) {
+		secretPath := binder.getSecretFieldPath()
+		expectedSecretPath := []string{"metadata", "clusterName"}
+		require.True(t, reflect.DeepEqual(secretPath, expectedSecretPath))
 	})
 }
 
