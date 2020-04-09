@@ -257,6 +257,7 @@ func (b *Binder) getSecretFieldPath() []string {
 func (b *Binder) removeSpecContainers(
 	obj *unstructured.Unstructured,
 ) (*unstructured.Unstructured, error) {
+	b.logger.Info("removeSpecContainers---------b.sbr", "b.sbr", b.sbr)
 	containers, err := b.extractSpecContainers(obj)
 	if err != nil {
 		return nil, err
@@ -491,7 +492,7 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 
 		var updatedObj *unstructured.Unstructured
 		var err error
-		b.logger.Info("---------b.sbr", "b.sbr", b.sbr)
+		b.logger.Info("update---------b.sbr", "b.sbr", b.sbr)
 		if b.sbr.Spec.ApplicationSelector.BindingPath.CustomSecretPath != nil {
 			updatedObj, err = b.updateSecretField(&obj)
 			if err != nil {
@@ -548,14 +549,24 @@ func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		logger.Debug("Inspecting object...")
 
-		updatedObj, err := b.removeSpecContainers(&obj)
-		if err != nil {
-			return err
-		}
-
-		if len(b.volumeKeys) > 0 {
-			if updatedObj, err = b.removeSpecVolumes(&obj); err != nil {
+		var updatedObj *unstructured.Unstructured
+		var err error
+		if b.sbr.Spec.ApplicationSelector.BindingPath.CustomSecretPath != nil {
+			updatedObj, err = b.updateSecretField(&obj)
+			if err != nil {
 				return err
+			}
+		}
+		if b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath != nil {
+			updatedObj, err = b.removeSpecContainers(&obj)
+			if err != nil {
+				return err
+			}
+
+			if len(b.volumeKeys) > 0 {
+				if updatedObj, err = b.removeSpecVolumes(&obj); err != nil {
+					return err
+				}
 			}
 		}
 
