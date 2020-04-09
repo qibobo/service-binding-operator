@@ -114,6 +114,10 @@ spec:
                   type: string
                 version:
                   type: string
+                id:
+                  type: string
+                envVarPrefix:
+                  type: string
               required:
               - group
               - kind
@@ -138,11 +142,16 @@ spec:
                     type: string
                   version:
                     type: string
+                  id:
+                    type: string
+                  envVarPrefix:
+                    type: string
                 required:
                 - group
                 - kind
                 - resourceRef
                 - version
+                - id
                 type: object
               type: array
             customEnvVar:
@@ -314,6 +323,11 @@ spec:
             secret:
               description: Secret is the name of the intermediate secret
               type: string
+          required:
+          - applications
+          - bindingStatus
+          - conditions
+          - secret
           type: object
       type: object
   version: v1alpha1
