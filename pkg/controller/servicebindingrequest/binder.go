@@ -237,6 +237,15 @@ func (b *Binder) updateSecretField(
 	return obj, nil
 }
 
+func (b *Binder) removeSecretField(
+	obj *unstructured.Unstructured,
+) *unstructured.Unstructured {
+	// secretFeildPath := append(b.getSecretFieldPath(), b.sbr.GetName())
+	// unstructured.RemoveNestedField(obj.Object, b.getSecretFieldPath()...)
+	unstructured.SetNestedField(obj.Object, "", b.getSecretFieldPath()...)
+	return obj
+}
+
 // updateSpecContainers extract containers from object, and trigger update.
 func (b *Binder) updateSpecContainers(
 	obj *unstructured.Unstructured,
@@ -567,21 +576,27 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 // remove attempts to update each given object without any service binding related information.
 func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 	for _, obj := range objs.Items {
+		var updatedObj *unstructured.Unstructured
+		var err error
+
 		name := obj.GetName()
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
-		logger.Debug("Inspecting object...")
-
-		updatedObj, err := b.removeSpecContainers(&obj)
-		if err != nil {
-			return err
+		logger.Debug("Inspecting object...", "sbr", b.sbr)
+		if b.sbr.Spec.ApplicationSelector.BindingPath.CustomSecretPath != nil {
+			updatedObj = b.removeSecretField(&obj)
 		}
-
-		if len(b.volumeKeys) > 0 {
-			if updatedObj, err = b.removeSpecVolumes(&obj); err != nil {
+		if b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath != nil {
+			updatedObj, err = b.removeSpecContainers(&obj)
+			if err != nil {
 				return err
 			}
-		}
 
+			if len(b.volumeKeys) > 0 {
+				if updatedObj, err = b.removeSpecVolumes(&obj); err != nil {
+					return err
+				}
+			}
+		}
 		logger.Debug("Updating object...")
 		if err = b.client.Update(b.ctx, updatedObj); err != nil {
 			return err

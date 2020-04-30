@@ -85,6 +85,29 @@ func TestBindingCustomSecretPath(t *testing.T) {
 		require.True(t, found)
 		require.Equal(t, name, customSecretInMeta)
 	})
+	t.Run("remove custom secret", func(t *testing.T) {
+		list, err := binderForsbrSecretPath.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+
+		updatedDeployment, err := binderForsbrSecretPath.updateSecretField(&list.Items[0])
+		require.NoError(t, err)
+		require.NotNil(t, updatedDeployment)
+
+		customSecretPathSlice := strings.Split(customSecretPath, ".")
+
+		customSecretInMeta, found, err := unstructured.NestedFieldCopy(list.Items[0].Object, customSecretPathSlice...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Equal(t, name, customSecretInMeta)
+		// remove custom secret
+		updatedDeployment = binderForsbrSecretPath.removeSecretField(&list.Items[0])
+		require.NotNil(t, updatedDeployment)
+		customSecretInMeta, found, err = unstructured.NestedString(updatedDeployment.Object, customSecretPathSlice...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Equal(t, "", customSecretInMeta)
+	})
 }
 
 func TestBinderNew(t *testing.T) {
