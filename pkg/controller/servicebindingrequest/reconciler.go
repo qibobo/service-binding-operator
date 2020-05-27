@@ -130,6 +130,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	ctx := context.Background()
 
 	selectors := extractServiceSelectors(sbr)
+	logger.Info("------------selectors", "selectors", selectors)
 	if len(selectors) == 0 {
 		conditionsv1.SetStatusCondition(&sbr.Status.Conditions, conditionsv1.Condition{
 			Type:    BindingReady,
@@ -156,6 +157,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		sbr.Spec.DetectBindingResources,
 		r.RestMapper,
 	)
+	logger.Info("------------serviceCtxs", "serviceCtxs", serviceCtxs)
 	if err != nil {
 		return RequeueError(err)
 	}
@@ -166,6 +168,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		serviceCtxs,
 		sbr.Spec.EnvVarPrefix,
 	)
+	logger.Info("3------------binding", "binding", binding)
 	if err != nil {
 		return RequeueError(err)
 	}
@@ -187,7 +190,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Error(err, "Building ServiceBinder")
 		return NoRequeue(err)
 	}
-
+	logger.Info("------------sb", "sb", sb)
 	if sbr.GetDeletionTimestamp() != nil {
 		logger := logger.WithName("unbind")
 		logger.Info("Executing unbinding steps...")

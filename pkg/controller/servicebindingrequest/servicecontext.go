@@ -1,6 +1,8 @@
 package servicebindingrequest
 
 import (
+	"fmt"
+
 	"github.com/imdario/mergo"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/annotations"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -85,7 +87,7 @@ func buildServiceContexts(
 			svcCtxs = append(svcCtxs, ownedResourcesCtxs...)
 		}
 	}
-
+	fmt.Printf("-------------buildServiceContexts:  svcCtxs: %v\n", svcCtxs)
 	return svcCtxs, nil
 }
 
@@ -132,28 +134,34 @@ func buildServiceContext(
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Printf("-------------buildServiceContext: obj:  %v\n", obj)
 	anns := map[string]string{}
 
 	// attempt to search the CRD of given gvk and bail out right away if a CRD can't be found; this
 	// means also a CRDDescription can't exist or if it does exist it is not meaningful.
 	crd, err := findServiceCRD(client, gvk)
+	fmt.Printf("-------------buildServiceContext: findServiceCRD:  %v\n", crd)
 	if err != nil && !errors.IsNotFound(err) {
 		return nil, err
 	} else if !errors.IsNotFound(err) {
 		// attempt to search the a CRDDescription related to the obtained CRD.
 		crdDescription, err := findCRDDescription(ns, client, gvk, crd)
+		fmt.Printf("-------------buildServiceContext: crdDescription:  %v\n", crdDescription)
 		if err != nil && !errors.IsNotFound(err) {
 			return nil, err
 		}
 		// start with annotations extracted from CRDDescription
 		err = mergo.Merge(
 			&anns, convertCRDDescriptionToAnnotations(crdDescription), mergo.WithOverride)
+		fmt.Printf("-------------buildServiceContext: convertCRDDescriptionToAnnotations:  %v\n", convertCRDDescriptionToAnnotations(crdDescription))
+		fmt.Printf("-------------buildServiceContext: anns1:  %v\n", anns)
 		if err != nil {
 			return nil, err
 		}
 		// then override collected annotations with CRD annotations
 		err = mergo.Merge(&anns, crd.GetAnnotations(), mergo.WithOverride)
+		fmt.Printf("-------------buildServiceContext: crd.GetAnnotations():  %v\n", crd.GetAnnotations())
+		fmt.Printf("-------------buildServiceContext: anns2:  %v\n", anns)
 		if err != nil {
 			return nil, err
 		}
@@ -161,6 +169,8 @@ func buildServiceContext(
 
 	// and finally override collected annotations with own annotations
 	err = mergo.Merge(&anns, obj.GetAnnotations(), mergo.WithOverride)
+	fmt.Printf("-------------buildServiceContext: obj.GetAnnotations():  %v\n", obj.GetAnnotations())
+	fmt.Printf("-------------buildServiceContext: anns3:  %v\n", anns)
 	if err != nil {
 		return nil, err
 	}
@@ -186,8 +196,9 @@ func buildServiceContext(
 		if err != nil {
 			continue
 		}
-
+		fmt.Printf("-------------buildServiceContext: r.Data:  %v\n", r.Data)
 		err = mergo.Merge(&envVars, r.Data, mergo.WithAppendSlice, mergo.WithOverride)
+		fmt.Printf("-------------buildServiceContext: envVars:  %v\n", envVars)
 		if err != nil {
 			return nil, err
 		}
@@ -196,7 +207,7 @@ func buildServiceContext(
 			volumeKeys = append(volumeKeys, r.Path)
 		}
 	}
-
+	fmt.Printf("-------------buildServiceContext: envVars-final:  %v\n", envVars)
 	serviceCtx := &ServiceContext{
 		Service:      obj,
 		EnvVars:      envVars,

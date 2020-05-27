@@ -71,6 +71,7 @@ func BuildHandler(
 	restMapper meta.RESTMapper,
 ) (Handler, error) {
 	bindingInfo, err := NewBindingInfo(annotationKey, annotationValue)
+	fmt.Printf("-------------bindingInfo:  %v\n", bindingInfo)
 	if err != nil {
 		return nil, err
 	}
