@@ -139,7 +139,7 @@ func TestFindOwnedResourcesCtxs_Secret(t *testing.T) {
 		Controller:         &trueBool,
 		BlockOwnerDeletion: &trueBool,
 	}
-	secret := mocks.SecretMock("test", "test_database")
+	secret := mocks.SecretMock("test", "test_database", nil)
 	us := &unstructured.Unstructured{}
 	uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secret)
 	require.NoError(t, err)
