@@ -175,7 +175,7 @@ func GetValue(obj interface{}, p string, o string) (map[string]interface{}, bool
 	outputPath := NewPath(o)
 	fmt.Printf("-----------GetValue inputPath:%v, outputPath:%v\n", inputPath, outputPath)
 	val, found, err := getValue(obj, inputPath)
-	fmt.Printf("-----------GetValue val:%v, found:%b\n", val, found)
+	fmt.Printf("-----------GetValue val:%v\n", val)
 	if err != nil || !found {
 		return nil, found, err
 	}

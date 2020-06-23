@@ -147,10 +147,16 @@ func (h *resourceHandler) Handle() (result, error) {
 	}
 
 	// prefix the output path with the kind of the resource.
-	outputPath := strings.Join([]string{
-		strings.ToLower(gvk.Kind),
-		h.bindingInfo.SourcePath,
-	}, ".")
+	outputPath := ""
+	if h.bindingInfo.SourcePath == "" {
+		outputPath = strings.ToLower(gvk.Kind)
+	} else {
+		outputPath = strings.Join([]string{
+			strings.ToLower(gvk.Kind),
+			h.bindingInfo.SourcePath,
+		}, ".")
+	}
+
 	rawDataPath := ""
 	if h.bindingInfo.SourcePath == "" {
 		rawDataPath = h.bindingInfo.ResourceReferencePath
