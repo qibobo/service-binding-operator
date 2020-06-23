@@ -1,6 +1,7 @@
 package servicebindingrequest
 
 import (
+	"fmt"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -43,7 +44,8 @@ func buildServiceEnvVars(svcCtx *serviceContext, globalEnvVarPrefix string) (map
 	if svcCtx.envVarPrefix == nil {
 		prefixes = append(prefixes, svcCtx.service.GroupVersionKind().Kind)
 	}
-
+	fmt.Printf("-------------buildServiceEnvVars, prefixes: %v\n", prefixes)
+	fmt.Printf("-------------buildServiceEnvVars, svcCtx.EnvVars: %v\n", svcCtx.envVars)
 	return envvars.Build(svcCtx.envVars, prefixes...)
 }
 
@@ -52,11 +54,13 @@ func (r *retriever) processServiceContext(
 	customEnvVarCtx map[string]interface{},
 	globalEnvVarPrefix string,
 ) (map[string][]byte, []string, error) {
+	r.logger.Info("-------------processServiceContext", "svcCtx", *svcCtx, "customEnvVarCtx", customEnvVarCtx, "globalEnvVarPrefix", globalEnvVarPrefix)
 	svcEnvVars, err := buildServiceEnvVars(svcCtx, globalEnvVarPrefix)
+
 	if err != nil {
 		return nil, nil, err
 	}
-
+	r.logger.Info("-------------processServiceContext", "svcEnvVars", svcEnvVars)
 	// contribute the entire resource to the context shared with the custom env parser
 	gvk := svcCtx.service.GetObjectKind().GroupVersionKind()
 
@@ -67,6 +71,7 @@ func (r *retriever) processServiceContext(
 	err = unstructured.SetNestedField(
 		customEnvVarCtx, svcCtx.service.Object, gvk.Version, gvk.Group, gvk.Kind,
 		svcCtx.service.GetName())
+	r.logger.Info("-------------processServiceContext1", "customEnvVarCtx", customEnvVarCtx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -81,6 +86,7 @@ func (r *retriever) processServiceContext(
 		svcCtx.service.Object,
 		createServiceIndexPath(svcCtx.service.GetName(), svcCtx.service.GroupVersionKind())...,
 	)
+	r.logger.Info("-------------processServiceContext2", "customEnvVarCtx", customEnvVarCtx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -92,7 +98,7 @@ func (r *retriever) processServiceContext(
 
 	var volumeKeys []string
 	volumeKeys = append(volumeKeys, svcCtx.volumeKeys...)
-
+	r.logger.Info("-------------processServiceContext", "svcEnvVars", svcEnvVars)
 	return envVars, volumeKeys, nil
 }
 
@@ -105,7 +111,7 @@ func (r *retriever) ProcessServiceContexts(
 	customEnvVarCtx := make(map[string]interface{})
 	volumeKeys := make([]string, 0)
 	envVars := make(map[string][]byte)
-
+	r.logger.Info("-------------ProcessServiceContexts", "globalEnvVarPrefix", globalEnvVarPrefix, "svcCtxs", svcCtxs, "envVarTemplates", envVarTemplates)
 	for _, svcCtx := range svcCtxs {
 		s, v, err := r.processServiceContext(svcCtx, customEnvVarCtx, globalEnvVarPrefix)
 		if err != nil {
@@ -116,7 +122,7 @@ func (r *retriever) ProcessServiceContexts(
 		}
 		volumeKeys = append(volumeKeys, v...)
 	}
-
+	r.logger.Info("-------------ProcessServiceContexts1", "envVars", envVars, "volumeKeys", volumeKeys, "customEnvVarCtx", customEnvVarCtx)
 	envParser := newCustomEnvParser(envVarTemplates, customEnvVarCtx)
 	customEnvVars, err := envParser.Parse()
 	if err != nil {
@@ -124,7 +130,7 @@ func (r *retriever) ProcessServiceContexts(
 			err, "Creating envVars", "Templates", envVarTemplates, "TemplateContext", customEnvVarCtx)
 		return nil, nil, err
 	}
-
+	r.logger.Info("-------------ProcessServiceContexts2", "customEnvVars", customEnvVars)
 	for k, v := range customEnvVars {
 		prefix := []string{}
 		if len(globalEnvVarPrefix) > 0 {
@@ -134,7 +140,7 @@ func (r *retriever) ProcessServiceContexts(
 		k = strings.Join(prefix, "_")
 		envVars[k] = []byte(v.(string))
 	}
-
+	r.logger.Info("-------------ProcessServiceContexts3", "envVars", envVars, "volumeKeys", volumeKeys, "customEnvVarCtx", customEnvVarCtx)
 	return envVars, volumeKeys, nil
 }
 

@@ -85,7 +85,7 @@ func discoverBindingType(val string) (bindingType, error) {
 // the resulting slice.
 func getInputPathFields(bi *bindingInfo, inputPathPrefix *string) []string {
 	inputPathFields := []string{}
-	if bi.ResourceReferencePath != bi.SourcePath {
+	if bi.SourcePath != "" {
 		inputPathFields = append(inputPathFields, bi.SourcePath)
 	}
 	if inputPathPrefix != nil && len(*inputPathPrefix) > 0 {
@@ -105,9 +105,11 @@ func (h *resourceHandler) Handle() (result, error) {
 	if err != nil {
 		return result{}, err
 	}
-
+	fmt.Printf("---------------Handle(): bindinginfo: %v, inputPathRoot: %v\n", h.bindingInfo, h.inputPathRoot)
 	inputPathFields := getInputPathFields(h.bindingInfo, h.inputPathRoot)
+	fmt.Printf("---------------inputPathFields: %v\n", inputPathFields)
 	val, ok, err := unstructured.NestedFieldCopy(resource.Object, inputPathFields...)
+	fmt.Printf("---------------val: %v\n", val)
 	if !ok {
 		return result{}, invalidArgumentErr(strings.Join(inputPathFields, ", "))
 	}
@@ -139,6 +141,7 @@ func (h *resourceHandler) Handle() (result, error) {
 
 	// get resource's kind.
 	gvk, err := h.restMapper.KindFor(h.relatedGroupVersionResource)
+	fmt.Printf("---------------gvk: %s\n", gvk)
 	if err != nil {
 		return result{}, err
 	}
@@ -148,12 +151,19 @@ func (h *resourceHandler) Handle() (result, error) {
 		strings.ToLower(gvk.Kind),
 		h.bindingInfo.SourcePath,
 	}, ".")
+	rawDataPath := ""
+	if h.bindingInfo.SourcePath == "" {
+		rawDataPath = h.bindingInfo.ResourceReferencePath
+	} else {
+		rawDataPath = strings.Join([]string{
+			h.bindingInfo.ResourceReferencePath,
+			h.bindingInfo.SourcePath,
+		}, ".")
+	}
 
-	rawDataPath := strings.Join([]string{
-		h.bindingInfo.ResourceReferencePath,
-		h.bindingInfo.SourcePath,
-	}, ".")
-
+	fmt.Printf("---------------h.bindingInfo: %v\n", h.bindingInfo)
+	fmt.Printf("---------------outputPath: %s\n", outputPath)
+	fmt.Printf("---------------rawDataPath: %s\n", rawDataPath)
 	return result{
 		Data: nested.ComposeValue(val, nested.NewPath(outputPath)),
 		Type: typ,
@@ -189,15 +199,16 @@ func NewResourceHandler(
 		return nil, invalidArgumentErr("bi")
 	}
 
-	if len(bi.SourcePath) == 0 {
-		return nil, invalidArgumentErr("bi.Path")
-	}
+	// if len(bi.SourcePath) == 0 {
+	// 	return nil, invalidArgumentErr("bi.Path")
+	// }
 
 	if len(bi.ResourceReferencePath) == 0 {
 		return nil, invalidArgumentErr("bi.ResourceReferencePath")
 	}
 
 	relatedResourceName, err := discoverRelatedResourceName(resource.Object, bi)
+	fmt.Printf("---------------relatedResourceName: %s\n", relatedResourceName)
 	if err != nil {
 		return nil, err
 	}

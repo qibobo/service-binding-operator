@@ -2,6 +2,7 @@ package annotations
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -29,6 +30,7 @@ var ErrEmptyAnnotationName = errors.New("empty annotation name")
 
 // NewBindingInfo parses the encoded in the annotation name, returning its parts.
 func NewBindingInfo(name string, value string) (*bindingInfo, error) {
+	fmt.Printf("---------------NewBindingInfo: name:%s,  value: %s\n", name, value)
 	// do not process unknown annotations
 	if !strings.HasPrefix(name, ServiceBindingOperatorAnnotationPrefix) {
 		return nil, ErrInvalidAnnotationPrefix
@@ -38,11 +40,12 @@ func NewBindingInfo(name string, value string) (*bindingInfo, error) {
 	if len(cleanName) == 0 {
 		return nil, ErrEmptyAnnotationName
 	}
-
+	fmt.Printf("---------------NewBindingInfo: cleanName:%s\n", cleanName)
 	parts := strings.SplitN(cleanName, "-", 2)
 
 	resourceReferencePath := parts[0]
-	sourcePath := parts[0]
+	// sourcePath := parts[0]
+	sourcePath := ""
 
 	// the annotation is a reference to another manifest
 	if len(parts) == 2 {

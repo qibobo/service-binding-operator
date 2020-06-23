@@ -143,6 +143,7 @@ func getValue(obj interface{}, p path) (interface{}, bool, error) {
 //     }
 //
 func ComposeValue(val interface{}, p path) map[string]interface{} {
+	fmt.Printf("-----------ComposeValue val:%v, p:%v\n", val, p)
 	// root is the resulting data-structure to be returned to caller.
 	root := make(map[string]interface{})
 
@@ -152,7 +153,7 @@ func ComposeValue(val interface{}, p path) map[string]interface{} {
 	// clean and split the path in `base` and `field`; for example, the path `a.b.*.c` is transformed
 	// into `a.b.c`, resulting in `a.b` as base and `c` as field.
 	base, field := p.clean().decompose()
-
+	fmt.Printf("-----------ComposeValue base:%v, field:%v\n", base, field)
 	// populate the root structure with the wanted hierarchy; being each node a
 	// map[string]interface{}.
 	for _, f := range base {
@@ -163,16 +164,18 @@ func ComposeValue(val interface{}, p path) map[string]interface{} {
 	}
 
 	n[field.Name] = val
-
+	fmt.Printf("-----------ComposeValue root:%v\n", root)
 	return root
 }
 
 // GetValue attempts to retrieve the value in the given string encoded path.
 func GetValue(obj interface{}, p string, o string) (map[string]interface{}, bool, error) {
+	fmt.Printf("-----------GetValue p:%s, o:%s\n", p, o)
 	inputPath := NewPath(p)
 	outputPath := NewPath(o)
-
+	fmt.Printf("-----------GetValue inputPath:%v, outputPath:%v\n", inputPath, outputPath)
 	val, found, err := getValue(obj, inputPath)
+	fmt.Printf("-----------GetValue val:%v, found:%b\n", val, found)
 	if err != nil || !found {
 		return nil, found, err
 	}

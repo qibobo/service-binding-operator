@@ -156,6 +156,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	ctx := context.Background()
 
 	selectors := extractServiceSelectors(sbr)
+	logger.Info("------------selectors", "selectors", selectors)
 	if len(selectors) == 0 {
 		conditionsv1.SetStatusCondition(&sbr.Status.Conditions, conditionsv1.Condition{
 			Type:    BindingReady,
@@ -186,7 +187,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if err != nil {
 		return requeueError(err)
 	}
-
+	logger.Info("------------serviceCtxs", "serviceCtxs", serviceCtxs)
 	binding, err := buildBinding(
 		r.dynClient,
 		sbr.Spec.CustomEnvVar,
@@ -196,7 +197,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if err != nil {
 		return requeueError(err)
 	}
-
+	logger.Info("3------------binding", "binding", binding)
 	options := &serviceBinderOptions{
 		dynClient:              r.dynClient,
 		detectBindingResources: sbr.Spec.DetectBindingResources,
@@ -214,7 +215,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Error(err, "Building ServiceBinder")
 		return noRequeue(err)
 	}
-
+	logger.Info("------------sb", "sb", sb)
 	gvrSpec := sbr.Spec.ApplicationSelector.GroupVersionResource
 	gvr := schema.GroupVersionResource{
 		Group:    gvrSpec.Group,

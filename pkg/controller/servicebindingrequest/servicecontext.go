@@ -1,6 +1,8 @@
 package servicebindingrequest
 
 import (
+	"fmt"
+
 	"github.com/imdario/mergo"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/annotations"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -97,7 +99,7 @@ SELECTORS:
 			svcCtxs = append(svcCtxs, ownedResourcesCtxs...)
 		}
 	}
-
+	fmt.Printf("-------------buildServiceContexts:  svcCtxs: %v\n", svcCtxs)
 	return svcCtxs, nil
 }
 
@@ -160,21 +162,26 @@ func runHandler(
 		return err
 	}
 	r, err := h.Handle()
+	fmt.Printf("---------------runHandler.Handle(), r: %v\n", r)
 	if err != nil {
 		return err
 	}
-
+	fmt.Printf("---------------runHandler.Handle(), outputObj.Object: %v\n", outputObj.Object)
+	fmt.Printf("---------------runHandler.Handle(), r.RawData: %v\n", r.RawData)
 	if newObj, err := merge(outputObj.Object, r.RawData); err != nil {
 		return err
 	} else {
 		outputObj.Object = newObj
 	}
-
+	fmt.Printf("---------------runHandler.Handle(), envVars: %v\n", envVars)
+	fmt.Printf("---------------runHandler.Handle(), r.Data: %v\n", r.Data)
+	fmt.Printf("---------------runHandler.Handle(), outputObj.Object: %v\n", outputObj.Object)
+	fmt.Printf("---------------runHandler.Handle(), outputObj: %v\n", outputObj)
 	err = mergo.Merge(&envVars, r.Data, mergo.WithAppendSlice, mergo.WithOverride)
 	if err != nil {
 		return err
 	}
-
+	fmt.Printf("---------------runHandler.Handle(), envVars: %v\n", envVars)
 	if r.Type == annotations.BindingTypeVolumeMount {
 		*volumeKeys = []string(append(*volumeKeys, r.Path))
 	}
@@ -200,26 +207,33 @@ func buildServiceContext(
 	}
 
 	anns := map[string]string{}
+	fmt.Printf("-------------buildServiceContext: obj:  %v\n", obj)
 
 	// attempt to search the CRD of given gvk and bail out right away if a CRD can't be found; this
 	// means also a CRDDescription can't exist or if it does exist it is not meaningful.
 	crd, err := findServiceCRD(client, gvk)
+	fmt.Printf("-------------buildServiceContext: findServiceCRD:  %v\n", crd)
 	if err != nil && !errors.IsNotFound(err) {
 		return nil, err
 	} else if !errors.IsNotFound(err) {
 		// attempt to search the a CRDDescription related to the obtained CRD.
 		crdDescription, err := findCRDDescription(ns, client, gvk, crd)
+		fmt.Printf("-------------buildServiceContext: crdDescription:  %v\n", crdDescription)
 		if err != nil && !errors.IsNotFound(err) {
 			return nil, err
 		}
 		// start with annotations extracted from CRDDescription
 		err = mergo.Merge(
 			&anns, convertCRDDescriptionToAnnotations(crdDescription), mergo.WithOverride)
+		fmt.Printf("-------------buildServiceContext: convertCRDDescriptionToAnnotations:  %v\n", convertCRDDescriptionToAnnotations(crdDescription))
+		fmt.Printf("-------------buildServiceContext: anns1:  %v\n", anns)
 		if err != nil {
 			return nil, err
 		}
 		// then override collected annotations with CRD annotations
 		err = mergo.Merge(&anns, crd.GetAnnotations(), mergo.WithOverride)
+		fmt.Printf("-------------buildServiceContext: crd.GetAnnotations():  %v\n", crd.GetAnnotations())
+		fmt.Printf("-------------buildServiceContext: anns2:  %v\n", anns)
 		if err != nil {
 			return nil, err
 		}
@@ -227,6 +241,8 @@ func buildServiceContext(
 
 	// and finally override collected annotations with own annotations
 	err = mergo.Merge(&anns, obj.GetAnnotations(), mergo.WithOverride)
+	fmt.Printf("-------------buildServiceContext: obj.GetAnnotations():  %v\n", obj.GetAnnotations())
+	fmt.Printf("-------------buildServiceContext: anns3:  %v\n", anns)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +260,7 @@ func buildServiceContext(
 			logger.Debug("Failed executing runHandler", "Error", err)
 		}
 	}
-
+	fmt.Printf("-------------buildServiceContext: envVars-final:  %v\n", envVars)
 	serviceCtx := &serviceContext{
 		service:      outputObj,
 		envVars:      envVars,
