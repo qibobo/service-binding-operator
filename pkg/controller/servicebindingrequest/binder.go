@@ -16,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -63,16 +64,20 @@ func (f extraFieldsModifierFunc) ModifyExtraFields(u *unstructured.Unstructured)
 }
 
 var emptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLabel not found")
-var applicationNotFound = errors.New("Application is already deleted")
+
+// var applicationNotFound = errors.New("Application is already deleted")
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *binder) search() (*unstructured.UnstructuredList, error) {
 	// If Application name is present
 	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
+		fmt.Printf("----------search with name\n")
 		return b.getApplicationByName()
 	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
+		fmt.Printf("----------search with selector\n")
 		return b.getApplicationByLabelSelector()
 	} else {
+		fmt.Printf("----------search with no\n")
 		return nil, emptyApplicationSelectorErr
 	}
 }
@@ -569,10 +574,17 @@ func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 // unbind select objects subject to binding, and proceed with "remove", which will unbind objects.
 func (b *binder) unbind() error {
 	objs, err := b.search()
+	fmt.Printf("----------unbind: %+v\n", err)
 	if err != nil {
-		if errors.Is(err, applicationNotFound) {
+		if k8sapierrors.IsNotFound(err) {
+			fmt.Printf("----------unbind not found error\n")
 			return nil
 		}
+		// if errors.Is(err, applicationNotFound) {
+		// 	fmt.Printf("----------unbind not found error\n")
+		// 	return nil
+		// }
+		fmt.Printf("----------unbind not catch error\n")
 		return err
 	}
 	return b.remove(objs)
@@ -583,9 +595,13 @@ func (b *binder) unbind() error {
 func (b *binder) bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
 	if err != nil {
-		if errors.Is(err, applicationNotFound) {
+		if k8sapierrors.IsNotFound(err) {
+			fmt.Printf("----------unbind not found error\n")
 			return nil, nil
 		}
+		// if errors.Is(err, applicationNotFound) {
+		// 	return nil, nil
+		// }
 		return nil, err
 	}
 	return b.update(objs)
