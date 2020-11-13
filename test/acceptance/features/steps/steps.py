@@ -389,6 +389,18 @@ def apply_yaml(context):
     assert result is not None, f"Unable to apply YAML for CR '{metadata_name}': {output}"
 
 
+# STEP
+@given(u'BackingService "{backing_service}" is deleted')
+@when(u'BackingService "{backing_service}" is deleted')
+def delete_yaml(context):
+    openshift = Openshift()
+    yaml = context.text
+    metadata_name = re.sub(r'.*: ', '', re.search(r'name: .*', yaml).group(0))
+    output = openshift.oc_delete(yaml)
+    result = re.search(rf'.*{metadata_name}.*(deleted)', output)
+    assert result is not None, f"Unable to delete CR '{metadata_name}': {output}"
+
+
 @then(u'Secret "{secret_ref}" has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
 def verify_injected_secretRef(context, secret_ref, cr_name, crd_name, json_path):
     openshift = Openshift()

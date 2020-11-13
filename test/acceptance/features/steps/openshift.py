@@ -167,6 +167,11 @@ spec:
         assert exit_code != 0, f"the command should fail but it did not, output: {output}"
         return output
 
+    def oc_delete(self, yaml):
+        (output, exit_code) = self.cmd.run("oc delete -f -", yaml)
+        print(output)
+        return output
+
     def create_catalog_source(self, name, catalog_image):
         catalog_source = self.catalog_source_yaml_template.format(name=name, catalog_image=catalog_image, olm_namespace=self.olm_namespace)
         return self.apply(catalog_source)
