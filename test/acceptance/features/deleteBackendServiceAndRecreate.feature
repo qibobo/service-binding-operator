@@ -37,8 +37,7 @@ Feature: Reconcile when BackingService CR got deleted and recreated
                     kind: Backend
                     name: backend-demo
             """
-        Then jq ".metadata.generation" of Service Binding "binding-request-backend" should be changed to "1"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend" should be changed to "True"
         And Secret "binding-request-backend" contains "BACKEND_HOST" key with value "example.common"
@@ -52,8 +51,7 @@ Feature: Reconcile when BackingService CR got deleted and recreated
             spec:
                 host: example.common
             """
-        Then jq ".metadata.generation" of Service Binding "binding-request-backend" should be changed to "2"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend" should be changed to "True"
         And Secret "binding-request-backend" contains "BACKEND_HOST" key with value "example.common"
