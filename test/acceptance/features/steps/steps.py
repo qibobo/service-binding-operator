@@ -390,8 +390,8 @@ def apply_yaml(context):
 
 
 # STEP
-@given(u'BackingService "{backing_service}" is deleted')
-@when(u'BackingService "{backing_service}" is deleted')
+@given(u'BackingService is deleted')
+@when(u'BackingService is deleted')
 def delete_yaml(context):
     openshift = Openshift()
     yaml = context.text

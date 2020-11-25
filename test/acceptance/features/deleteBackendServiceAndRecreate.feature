@@ -6,7 +6,8 @@ Feature: Reconcile when BackingService CR got deleted and recreated
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
-        * PostgreSQL DB operator is installed 
+	* PostgreSQL DB operator is installed 
+    @wip
     Scenario: Reconcile when BackingService CR got deleted and recreated 
         Given OLM Operator "backend-new-spec" is running
         * The Custom Resource is present
@@ -41,7 +42,15 @@ Feature: Reconcile when BackingService CR got deleted and recreated
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend" should be changed to "True"
         And Secret "binding-request-backend" contains "BACKEND_HOST" key with value "example.common"
-        When BackingService "backend-demo" is deleted       
+	When BackingService is deleted
+	    """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo
+            spec:
+                host: example.common
+	    """
         And The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
