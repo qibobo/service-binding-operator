@@ -118,9 +118,9 @@ Feature: Reconcile when BackingService CR got deleted and recreated
                 data:
                     dbCredentials: ssa-2-secret
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "ssa-2" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "ssa-2" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "ssa-2" should be changed to "True"
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond2"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
