@@ -373,6 +373,7 @@ def check_secret_key_with_ip_value(context, secret_name, secret_key):
 @when(u'The Custom Resource is present')
 @given(u'The ConfigMap is present')
 @given(u'The Secret is present')
+@when(u'The Secret is present')
 def apply_yaml(context):
     openshift = Openshift()
     metadata = yaml.full_load(context.text)["metadata"]
